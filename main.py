@@ -20,21 +20,36 @@ BLUE = (0, 0, 255)
 # Frame rate
 FPS = 60
 
-# Cell dimensions
-CELL_SIZE = 20
-COLS, ROWS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
+# Levels configuration
+LEVEL_SETTINGS = {
+    0: 40,  # Very easy
+    1: 35,
+    2: 30,
+    3: 25,
+    4: 20,  # Default
+    5: 15,
+    6: 10,
+    7: 8,
+    8: 6,
+    9: 5    # Hardest
+}
+
+# Initial level
+current_level = 4
 
 # Directions (Right, Left, Up, Down)
 DIRS = [(1, 0), (-1, 0), (0, -1), (0, 1)]
 # Bit mask for each direction
 RIGHT, LEFT, UP, DOWN = 1, 2, 4, 8
 
+# Cell dimensions and maze setup
+CELL_SIZE = LEVEL_SETTINGS[current_level]
+COLS, ROWS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
+EXIT_X, EXIT_Y = COLS - 1, ROWS - 1
+
 # Maze grid
 maze = [[0 for _ in range(COLS)] for _ in range(ROWS)]
 visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
-
-# Exit position
-EXIT_X, EXIT_Y = COLS - 1, ROWS - 1
 
 # Path to the audio files
 audio_path = os.path.join(os.path.dirname(__file__), 'audio')
@@ -47,35 +62,52 @@ win_sound = pygame.mixer.Sound(os.path.join(audio_path, 'win.mp3'))
 def is_valid(nx, ny):
     return 0 <= nx < COLS and 0 <= ny < ROWS and not visited[ny][nx]
 
-def generate_maze(x, y):
+def generate_simpler_maze(x, y):
+    stack = [(x, y)]
     visited[y][x] = True
-    directions = DIRS[:]
-    random.shuffle(directions)
-    for dx, dy in directions:
-        nx, ny = x + dx, y + dy
-        if is_valid(nx, ny):
-            if dx == 1:  # Moving right
-                maze[y][x] |= RIGHT
-                maze[ny][nx] |= LEFT
-            elif dx == -1:  # Moving left
-                maze[y][x] |= LEFT
-                maze[ny][nx] |= RIGHT
-            elif dy == 1:  # Moving down
-                maze[y][x] |= DOWN
-                maze[ny][nx] |= UP
-            elif dy == -1:  # Moving up
-                maze[y][x] |= UP
-                maze[ny][nx] |= DOWN
-            generate_maze(nx, ny)
+
+    while stack:
+        cx, cy = stack[-1]
+        directions = DIRS[:]
+        random.shuffle(directions)
+        moved = False
+
+        for dx, dy in directions:
+            nx, ny = cx + dx, cy + dy
+            if is_valid(nx, ny):
+                # Update maze structure to ensure easy paths
+                if dx == 1:  # Moving right
+                    maze[cy][cx] |= RIGHT
+                    maze[ny][nx] |= LEFT
+                elif dx == -1:  # Moving left
+                    maze[cy][cx] |= LEFT
+                    maze[ny][nx] |= RIGHT
+                elif dy == 1:  # Moving down
+                    maze[cy][cx] |= DOWN
+                    maze[ny][nx] |= UP
+                elif dy == -1:  # Moving up
+                    maze[cy][cx] |= UP
+                    maze[ny][nx] |= DOWN
+
+                visited[ny][nx] = True
+                stack.append((nx, ny))
+                moved = True
+                break
+
+        if not moved:
+            stack.pop()
 
 def reset_game():
-    global player_x, player_y
+    global player_x, player_y, CELL_SIZE, COLS, ROWS, EXIT_X, EXIT_Y, maze, visited
     player_x, player_y = 0, 0
+    # Update cell size and maze dimensions based on the current level
+    CELL_SIZE = LEVEL_SETTINGS[current_level]
+    COLS, ROWS = WIDTH // CELL_SIZE, HEIGHT // CELL_SIZE
+    EXIT_X, EXIT_Y = COLS - 1, ROWS - 1
     # Regenerate maze
-    global maze, visited
     maze = [[0 for _ in range(COLS)] for _ in range(ROWS)]
     visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
-    generate_maze(0, 0)
+    generate_simpler_maze(0, 0)
 
 def draw_maze():
     for y in range(ROWS):
@@ -119,7 +151,8 @@ def draw_instructions_screen():
         "Reach the green square to win.",
         "Press 'R' to restart.",
         "Press 'I' to hide this instruction.",
-        "Press esc to pause game."
+        "Press ESC to pause game.",
+        "Click from 0-9 to pick a difficulty level."
     ]
     WIN.fill(WHITE)
     y = 50
@@ -152,7 +185,7 @@ def draw_pause_screen():
     pygame.display.update()
 
 def main():
-    global player_x, player_y
+    global player_x, player_y, current_level
     state = 'start'  # Game state: 'start', 'playing', 'instructions', 'win', 'paused'
     
     clock = pygame.time.Clock()
@@ -190,6 +223,37 @@ def main():
                 pygame.mixer.Sound.play(key_sound)
                 reset_game()
                 start_time = pygame.time.get_ticks()
+
+            if keys[pygame.K_0]:  # Set level to 0
+                current_level = 0
+                reset_game()
+            if keys[pygame.K_1]:  # Set level to 1
+                current_level = 1
+                reset_game()
+            if keys[pygame.K_2]:  # Set level to 2
+                current_level = 2
+                reset_game()
+            if keys[pygame.K_3]:  # Set level to 3
+                current_level = 3
+                reset_game()
+            if keys[pygame.K_4]:  # Set level to 4 (default)
+                current_level = 4
+                reset_game()
+            if keys[pygame.K_5]:  # Set level to 5
+                current_level = 5
+                reset_game()
+            if keys[pygame.K_6]:  # Set level to 6
+                current_level = 6
+                reset_game()
+            if keys[pygame.K_7]:  # Set level to 7
+                current_level = 7
+                reset_game()
+            if keys[pygame.K_8]:  # Set level to 8
+                current_level = 8
+                reset_game()
+            if keys[pygame.K_9]:  # Set level to 9
+                current_level = 9
+                reset_game()
 
             moved = False
             if keys[pygame.K_RIGHT] and player_x < COLS - 1 and (maze[player_y][player_x] & RIGHT):
