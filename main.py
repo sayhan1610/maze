@@ -152,7 +152,7 @@ def draw_instructions_screen():
         "Press 'R' to restart.",
         "Press 'I' to hide this instruction.",
         "Press ESC to pause game.",
-        "Click from 0-9 to pick a difficulty level."
+        "Click from 0-9 once the game starts to pick a difficulty level."
     ]
     WIN.fill(WHITE)
     y = 50
