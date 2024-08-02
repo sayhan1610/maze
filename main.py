@@ -59,6 +59,12 @@ key_sound = pygame.mixer.Sound(os.path.join(audio_path, 'key.mp3'))
 start_sound = pygame.mixer.Sound(os.path.join(audio_path, 'start.mp3'))
 win_sound = pygame.mixer.Sound(os.path.join(audio_path, 'win.mp3'))
 
+# Mute toggle
+muted = False
+
+# Show level toggle
+show_level = True
+
 def is_valid(nx, ny):
     return 0 <= nx < COLS and 0 <= ny < ROWS and not visited[ny][nx]
 
@@ -152,7 +158,9 @@ def draw_instructions_screen():
         "Press 'R' to restart.",
         "Press 'I' to hide this instruction.",
         "Press ESC to pause game.",
-        "Click from 0-9 once the game starts to pick a difficulty level."
+        "Click from 0-9 once the game starts to pick a difficulty level.",
+        "Press 'M' to mute/unmute sounds.",
+        "Press 'L' to show/hide current level."
     ]
     WIN.fill(WHITE)
     y = 50
@@ -180,126 +188,138 @@ def draw_pause_screen():
     quit_text = font.render("Press Q to Quit to Home", True, BLACK)
     WIN.fill(WHITE)
     WIN.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2 - pause_text.get_height() // 2 - 40))
-    WIN.blit(resume_text, (WIDTH // 2 - resume_text.get_width() // 2, HEIGHT // 2))
-    WIN.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, HEIGHT // 2 + 40))
+    WIN.blit(resume_text, (WIDTH // 2 - resume_text.get_width() // 2, HEIGHT // 2 + 20))
+    WIN.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, HEIGHT // 2 + 60))
     pygame.display.update()
 
-def main():
-    global player_x, player_y, current_level
-    state = 'start'  # Game state: 'start', 'playing', 'instructions', 'win', 'paused'
-    
-    clock = pygame.time.Clock()
-    run = True
-    start_time = None
+def draw_current_level():
+    font = pygame.font.Font(None, 36)
+    level_text = font.render(f"Level: {current_level}", True, BLACK)
+    WIN.blit(level_text, (10, 50))
 
-    while run:
+def play_sound(sound):
+    if not muted:
+        sound.play()
+
+# Game loop
+def main():
+    global player_x, player_y, current_level, muted, show_level
+
+    player_x, player_y = 0, 0
+    clock = pygame.time.Clock()
+    start_time = 0
+    state = 'start'
+    show_instructions = False
+
+    running = True
+    while running:
         clock.tick(FPS)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                running = False
 
-        keys = pygame.key.get_pressed()
+            if event.type == pygame.KEYDOWN:
+                if state == 'start':
+                    if event.key == pygame.K_RETURN:
+                        play_sound(start_sound)
+                        reset_game()
+                        start_time = pygame.time.get_ticks()
+                        state = 'playing'
+                    elif event.key == pygame.K_i:
+                        show_instructions = not show_instructions
+                elif state == 'playing':
+                    if event.key == pygame.K_r:
+                        reset_game()
+                        start_time = pygame.time.get_ticks()
+                    elif event.key == pygame.K_ESCAPE:
+                        state = 'paused'
+                    elif event.key == pygame.K_m:
+                        muted = not muted  # Toggle mute
+                    elif event.key == pygame.K_l:
+                        show_level = not show_level  # Toggle level display
+                    elif event.key == pygame.K_0:
+                        current_level = 0
+                        reset_game()
+                    elif event.key == pygame.K_1:
+                        current_level = 1
+                        reset_game()
+                    elif event.key == pygame.K_2:
+                        current_level = 2
+                        reset_game()
+                    elif event.key == pygame.K_3:
+                        current_level = 3
+                        reset_game()
+                    elif event.key == pygame.K_4:
+                        current_level = 4
+                        reset_game()
+                    elif event.key == pygame.K_5:
+                        current_level = 5
+                        reset_game()
+                    elif event.key == pygame.K_6:
+                        current_level = 6
+                        reset_game()
+                    elif event.key == pygame.K_7:
+                        current_level = 7
+                        reset_game()
+                    elif event.key == pygame.K_8:
+                        current_level = 8
+                        reset_game()
+                    elif event.key == pygame.K_9:
+                        current_level = 9
+                        reset_game()
+                elif state == 'paused':
+                    if event.key == pygame.K_RETURN:
+                        state = 'playing'
+                    elif event.key == pygame.K_q:
+                        state = 'start'
+                elif state == 'won':
+                    if event.key == pygame.K_r:
+                        reset_game()
+                        start_time = pygame.time.get_ticks()
+                        state = 'playing'
 
         if state == 'start':
             draw_start_screen()
-            if keys[pygame.K_RETURN]:  # Start the game
-                pygame.mixer.Sound.play(start_sound)
-                reset_game()
-                start_time = pygame.time.get_ticks()
-                state = 'playing'
-            if keys[pygame.K_i]:  # Show instructions
-                state = 'instructions'
-
-        elif state == 'instructions':
-            draw_instructions_screen()
-            if keys[pygame.K_i]:  # Hide instructions
-                state = 'start'
+            if show_instructions:
+                draw_instructions_screen()
 
         elif state == 'playing':
-            if keys[pygame.K_ESCAPE]:  # Pause the game
-                state = 'paused'
-
-            if keys[pygame.K_r]:  # Restart the game
-                pygame.mixer.Sound.play(key_sound)
-                reset_game()
-                start_time = pygame.time.get_ticks()
-
-            if keys[pygame.K_0]:  # Set level to 0
-                current_level = 0
-                reset_game()
-            if keys[pygame.K_1]:  # Set level to 1
-                current_level = 1
-                reset_game()
-            if keys[pygame.K_2]:  # Set level to 2
-                current_level = 2
-                reset_game()
-            if keys[pygame.K_3]:  # Set level to 3
-                current_level = 3
-                reset_game()
-            if keys[pygame.K_4]:  # Set level to 4 (default)
-                current_level = 4
-                reset_game()
-            if keys[pygame.K_5]:  # Set level to 5
-                current_level = 5
-                reset_game()
-            if keys[pygame.K_6]:  # Set level to 6
-                current_level = 6
-                reset_game()
-            if keys[pygame.K_7]:  # Set level to 7
-                current_level = 7
-                reset_game()
-            if keys[pygame.K_8]:  # Set level to 8
-                current_level = 8
-                reset_game()
-            if keys[pygame.K_9]:  # Set level to 9
-                current_level = 9
-                reset_game()
-
-            moved = False
-            if keys[pygame.K_RIGHT] and player_x < COLS - 1 and (maze[player_y][player_x] & RIGHT):
-                if not moved:
-                    pygame.mixer.Sound.play(key_sound)
-                player_x += 1
-                moved = True
-            if keys[pygame.K_LEFT] and player_x > 0 and (maze[player_y][player_x] & LEFT):
-                if not moved:
-                    pygame.mixer.Sound.play(key_sound)
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] and maze[player_y][player_x] & LEFT:
                 player_x -= 1
-                moved = True
-            if keys[pygame.K_UP] and player_y > 0 and (maze[player_y][player_x] & UP):
-                if not moved:
-                    pygame.mixer.Sound.play(key_sound)
+                play_sound(key_sound)
+            elif keys[pygame.K_RIGHT] and maze[player_y][player_x] & RIGHT:
+                player_x += 1
+                play_sound(key_sound)
+            elif keys[pygame.K_UP] and maze[player_y][player_x] & UP:
                 player_y -= 1
-                moved = True
-            if keys[pygame.K_DOWN] and player_y < ROWS - 1 and (maze[player_y][player_x] & DOWN):
-                if not moved:
-                    pygame.mixer.Sound.play(key_sound)
+                play_sound(key_sound)
+            elif keys[pygame.K_DOWN] and maze[player_y][player_x] & DOWN:
                 player_y += 1
-                moved = True
+                play_sound(key_sound)
 
             if player_x == EXIT_X and player_y == EXIT_Y:
-                state = 'win'
+                play_sound(win_sound)
                 elapsed_time = pygame.time.get_ticks() - start_time
-                pygame.mixer.Sound.play(win_sound)
-
-            WIN.fill(WHITE)
-            draw_maze()
-            draw_player()
-            draw_exit()
-            draw_timer(start_time)
-            pygame.display.update()
+                draw_win_screen(elapsed_time)
+                state = 'won'
+            else:
+                WIN.fill(WHITE)
+                draw_maze()
+                draw_exit()
+                draw_player()
+                draw_timer(start_time)
+                if show_level:
+                    draw_current_level()
+                pygame.display.update()
 
         elif state == 'paused':
             draw_pause_screen()
-            if keys[pygame.K_RETURN]:  # Resume the game
-                state = 'playing'
-            if keys[pygame.K_q]:  # Quit to home screen
-                state = 'start'
 
-        elif state == 'win':
-            draw_win_screen(elapsed_time)
-            if keys[pygame.K_r]:  # Replay the game
-                state = 'start'
+        elif state == 'won':
+            # The win screen is drawn in the event loop above
+            pass
 
     pygame.quit()
 
