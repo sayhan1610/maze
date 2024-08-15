@@ -30,9 +30,8 @@ Welcome to the Automatic Maze Game! This game is built using Pygame and offers d
 
 3. **Run the Game:**
 
-   ```sh
-   python maze.py
-   ```
+- Double click `for_windows.bat` if on a windows device
+- or run `./for_unix.sh` on terminal for unix devices
 
 ## Gameplay Instructions
 
